@@ -160,3 +160,8 @@ struct GetSSHKey {
   }
 ]
 ```
+
+
+
+"4755734c-63fc-42df-9bfc-ff5ec2802cfa"
+"[{\"id\":\"4755734c-63fc-42df-9bfc-ff5ec2802cfa\",\"ip\":null,\"status\":\"provisioning\",\"created_at\":\"2023-09-27T11:18:43.250Z\",\"cpu\":{\"description\":\"6 CPU\",\"number_of_cores\":6},\"gpu\":{\"description\":\"1x NVidia Tesla V100 16GB\",\"number_of_gpus\":1},\"gpu_memory\":{\"description\":\"16GB GPU RAM\",\"size_in_gigabytes\":16},\"memory\":{\"description\":\"23GB RAM\",\"size_in_gigabytes\":23},\"storage\":{\"description\":\"225GB NVME\",\"size_in_gigabytes\":225},\"hostname\":\"cuda\",\"description\":\"Rust cuda gpu server\",\"location\":\"FIN-01\",\"price_per_hour\":0.25,\"is_spot\":true,\"instance_type\":\"1V100.6V\",\"image\":\"ubuntu-22.04-cuda-12.0-docker\",\"os_name\":\"OS-NVMe-w7JCitk3\",\"startup_script_id\":null,\"ssh_key_ids\":[\"f42ab232-eb48-485f-b188-d528ebbf1beb\"],\"os_volume_id\":\"9eb0f166-f119-49c9-ba55-e857dd055500\",\"jupyter_token\":null}]"

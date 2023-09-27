@@ -1,6 +1,9 @@
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use std::time::SystemTime;
-use ureq::{Agent, Response};
+use ureq::{json, Agent, Response};
+
+use super::{constants::api, Credentials};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Session {
@@ -9,7 +12,6 @@ pub struct Session {
     refresh_token: String,
     token_type: String,
     scope: String,
-
     #[serde(default = "default_updated_at")]
     updated_at: SystemTime,
 }
@@ -24,16 +26,16 @@ impl Session {
         format!("Bearer {token}")
     }
 
-    fn as_payload(&self) -> serde_json::Value {
-        ureq::json!({
+    fn as_payload(&self) -> Value {
+        json!({
           "grant_type": "refresh_token",
           "refresh_token": self.refresh_token,
         })
     }
 
-    pub fn set_tokens(client: &Agent, credentials: &super::Credentials) -> Self {
+    pub fn set_tokens(client: &Agent, credentials: &Credentials) -> Self {
         let response: Response = client
-            .post(super::endpoints::AUTHENTICATION)
+            .post(api::AUTHENTICATION)
             .set("Content-Type", "application/json")
             .send_json(credentials.as_payload())
             .expect("cannot set the tokens");
@@ -50,7 +52,7 @@ impl Session {
     pub fn refresh(&mut self, client: Agent) {
         if self.is_deprecated() {
             let response: Response = client
-                .post(super::endpoints::AUTHENTICATION)
+                .post(api::AUTHENTICATION)
                 .set("Content-Type", "application/json")
                 .send_json(self.as_payload())
                 .expect("cannot refresh the tokens");

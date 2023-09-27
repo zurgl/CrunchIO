@@ -1,6 +1,12 @@
-use serde::{Deserialize, Deserializer};
+use serde::{Deserialize, Deserializer, Serialize};
 
-#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Default)]
+#[derive(Serialize, Deserialize, Debug)]
+pub enum VolumeType {
+    NVMe,
+    HDD,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct Volume {
     id: String,
     #[serde(deserialize_with = "deserialize_null_default")]

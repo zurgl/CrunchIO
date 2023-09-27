@@ -1,4 +1,9 @@
-#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
+use std::env;
+use ureq::json;
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Credentials {
     id: String,
     secret: String,
@@ -7,15 +12,15 @@ pub struct Credentials {
 impl Default for Credentials {
     fn default() -> Self {
         Self {
-            id: std::option_env!("CLIENT_ID").unwrap().to_string(),
-            secret: std::option_env!("CLIENT_SECRET").unwrap().to_string(),
+            id: env!("CLIENT_ID").to_owned(),
+            secret: env!("CLIENT_SECRET").to_owned(),
         }
     }
 }
 
 impl Credentials {
-    pub fn as_payload(&self) -> serde_json::Value {
-        ureq::json!({
+    pub fn as_payload(&self) -> Value {
+        json!({
             "grant_type": "client_credentials",
             "client_id": self.id,
             "client_secret": self.secret
