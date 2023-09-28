@@ -3,11 +3,8 @@ use crunchio::CrunchIO;
 fn main() -> Result<(), &'static str> {
     let client = CrunchIO::default();
 
-    let balance = client.get_balance();
-    println!("{balance:#?}");
-
-    // let locations = client.locations();
-    // println!("{locations:#?}");
+    let all_instance_types = client.get_all_instance_types();
+    println!("{all_instance_types:#?}");
 
     // let scripts = client.scripts();
     // println!("{:#?}", scripts);

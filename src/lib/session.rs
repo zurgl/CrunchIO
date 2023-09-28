@@ -8,16 +8,12 @@ use super::{constants::api, Credentials};
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Session {
     access_token: String,
-    expires_in: u32,
+    expires_in: u64,
     refresh_token: String,
     token_type: String,
     scope: String,
-    #[serde(default = "default_updated_at")]
+    #[serde(default = "SystemTime::now")]
     updated_at: SystemTime,
-}
-
-fn default_updated_at() -> SystemTime {
-    SystemTime::now()
 }
 
 impl Session {
@@ -46,7 +42,7 @@ impl Session {
     pub fn is_deprecated(&self) -> bool {
         let now = SystemTime::now();
         let elapsed = now.duration_since(self.updated_at).unwrap();
-        elapsed.as_secs() >= (self.expires_in as u64)
+        elapsed.as_secs() >= self.expires_in
     }
 
     pub fn refresh(&mut self, client: Agent) {

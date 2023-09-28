@@ -2,6 +2,7 @@ pub mod api {
     pub const URL: &str = "https://api.datacrunch.io/v1";
     pub const VERSION: &str = "v1";
     pub const AUTHENTICATION: &str = "https://api.datacrunch.io/v1/oauth2/token";
+    // pub const MOCK: &str = "https://stoplight.io/mocks/datacrunch/datapublic/2854742";
 }
 
 pub mod routes {

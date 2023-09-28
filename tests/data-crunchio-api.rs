@@ -44,7 +44,7 @@ fn test_get_ssh_keys() {
 #[test]
 fn test_get_scripts() {
     let client = CrunchIO::default();
-    let _ = client.get_scripts();
+    let _ = client.get_all_startup_scripts();
 }
 
 #[test]

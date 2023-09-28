@@ -5,6 +5,8 @@ pub mod error;
 
 pub mod ionos;
 
+pub mod scripts;
+
 pub mod schemas;
 use schemas::instance::RunningInstance;
 
@@ -19,43 +21,6 @@ use serde_json::Value;
 use std::time::Duration;
 use ureq::{json, AgentBuilder, Error, Response};
 use url::Url;
-
-pub struct CrunchIO {
-    pub client: ureq::Agent,
-    pub credentials: Credentials,
-    pub session: Session,
-    pub base_url: Url,
-}
-
-#[derive(Deserialize, Serialize, Clone, Default)]
-pub struct QueryParams<'a> {
-    method: Method,
-    path: &'a str,
-    payload: Option<Value>,
-    params: Option<&'a str>,
-}
-
-impl Default for CrunchIO {
-    fn default() -> Self {
-        let credentials = Credentials::default();
-        let client = AgentBuilder::new()
-            .timeout_read(Duration::from_secs(5))
-            .timeout_write(Duration::from_secs(5))
-            .build();
-
-        let session = Session::set_tokens(&client, &credentials);
-
-        let base_url = Url::parse(api::URL).unwrap();
-        println!("{base_url:?}");
-
-        Self {
-            client,
-            credentials,
-            session,
-            base_url,
-        }
-    }
-}
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub enum Method {
@@ -77,25 +42,66 @@ impl From<&Method> for &str {
     }
 }
 
+pub struct CrunchIO {
+    pub client: ureq::Agent,
+    pub credentials: Credentials,
+    pub session: Session,
+    pub base_url: Url,
+}
+
+impl Default for CrunchIO {
+    fn default() -> Self {
+        let credentials = Credentials::default();
+
+        let client = AgentBuilder::new()
+            .timeout_read(Duration::from_secs(5))
+            .timeout_write(Duration::from_secs(5))
+            .build();
+
+        let session = Session::set_tokens(&client, &credentials);
+
+        let base_url = Url::parse(api::URL).unwrap();
+
+        Self {
+            client,
+            credentials,
+            session,
+            base_url,
+        }
+    }
+}
+
+#[derive(Deserialize, Serialize, Clone, Default)]
+pub struct QueryParams<'a> {
+    method: Method,
+    path: &'a str,
+    payload: Value,
+    params: Vec<(&'a str, &'a str)>,
+}
+
 impl CrunchIO {
-    fn query(&self, params: &QueryParams) -> Response {
+    fn query(&self, query_params: &QueryParams) -> Response {
         let QueryParams {
             method,
             path,
             payload,
-            ..
-        } = params;
+            params,
+        } = query_params;
 
         let url = &mut self.base_url.clone();
         url.set_path(&format!("{api_version}/{path}", api_version = api::VERSION));
 
-        let request = self.client.request_url(method.into(), url);
-        let request = request.set("Content-Type", "application/json");
-        let request = request.set("Authorization", &self.session.bearer());
-        let request = request.set("Accept", "application/json");
+        let mut request = self.client.request_url(method.into(), url);
+        request = request.set("Content-Type", "application/json");
+        request = request.set("Authorization", &self.session.bearer());
+        request = request.set("Accept", "application/json");
+
+        for (param, value) in params {
+            request = request.query(param, value);
+        }
 
         match {
-            if let Some(payload) = payload {
+            if !payload.is_null() {
                 request.send_json(json!(payload))
             } else {
                 request.call()
@@ -235,19 +241,6 @@ impl CrunchIO {
         }
     }
 
-    pub fn get_scripts(&self) -> schemas::Scripts {
-        match self
-            .query(&QueryParams {
-                path: routes::SCRIPTS,
-                ..Default::default()
-            })
-            .into_json()
-        {
-            Ok(scripts) => scripts,
-            Err(error) => panic!("Json parsing failed with: {error}"),
-        }
-    }
-
     pub fn get_instance_availabilities(&self) -> schemas::InstancesAvailabilities {
         match self
             .query(&QueryParams {
@@ -313,3 +306,18 @@ impl CrunchIO {
         }
     }
 }
+
+// pub fn add(left: usize, right: usize) -> usize {
+//   left + right
+// }
+
+// #[cfg(test)]
+// mod tests {
+//   use super::*;
+
+//   #[test]
+//   fn it_works() {
+//       let result = add(2, 2);
+//       assert_eq!(result, 4);
+//   }
+// }
