@@ -1,6 +1,4 @@
-use crate::Method;
-
-use super::{routes, CrunchIO, QueryParams};
+use super::{CrunchIO, Method, QueryParams};
 use serde::{Deserialize, Serialize};
 use ureq::json;
 use uuid::Uuid;
@@ -19,12 +17,14 @@ pub struct DeletedScripts {
 
 pub type Scripts = Vec<Script>;
 
+const PATH: &str = "scripts";
+
 impl CrunchIO {
     // Private require Bearer token
     pub fn get_all_startup_scripts(&self) -> Scripts {
         match self
             .query(&QueryParams {
-                path: routes::SCRIPTS,
+                path: PATH,
                 ..Default::default()
             })
             .into_json()
@@ -42,7 +42,7 @@ impl CrunchIO {
         });
         match self
             .query(&QueryParams {
-                path: routes::SCRIPTS,
+                path: PATH,
                 method: Method::POST,
                 payload,
                 ..Default::default()
@@ -61,7 +61,7 @@ impl CrunchIO {
         });
         match self
             .query(&QueryParams {
-                path: routes::SCRIPTS,
+                path: PATH,
                 method: Method::DELETE,
                 payload,
                 ..Default::default()
@@ -75,7 +75,7 @@ impl CrunchIO {
 
     // Private require Bearer token
     pub fn get_startup_script_by_id(&self, id: &Uuid) -> Scripts {
-        let path = &format!("{route}/{id}", route = routes::SCRIPTS);
+        let path = &format!("{PATH}/{id}");
 
         match self
             .query(&QueryParams {
@@ -91,7 +91,7 @@ impl CrunchIO {
 
     // Private require Bearer token
     pub fn delete_startup_script_by_id(&self, id: &Uuid) -> DeletedScripts {
-        let path = &format!("{route}/{id}", route = routes::SCRIPTS);
+        let path = &format!("{PATH}/{id}");
 
         match self
             .query(&QueryParams {

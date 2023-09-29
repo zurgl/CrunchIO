@@ -1,7 +1,7 @@
 use crunchio::CrunchIO;
 
 #[test]
-fn test_get_startup_scripts() {
+fn test_all_http_method_for_startup_script() {
     let client = CrunchIO::default();
 
     let name = "new_startup";

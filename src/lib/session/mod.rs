@@ -3,7 +3,10 @@ use serde_json::Value;
 use std::time::SystemTime;
 use ureq::{json, Agent, Response};
 
-use super::{constants::api, Credentials};
+use crate::api;
+
+pub mod credentials;
+use credentials::Credentials;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Session {
@@ -29,7 +32,9 @@ impl Session {
         })
     }
 
-    pub fn set_tokens(client: &Agent, credentials: &Credentials) -> Self {
+    pub fn set_tokens(client: &Agent) -> Self {
+        let credentials = Credentials::default();
+
         let response: Response = client
             .post(api::AUTHENTICATION)
             .set("Content-Type", "application/json")

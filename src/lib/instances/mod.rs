@@ -1,4 +1,10 @@
-use serde::{Deserialize, Deserializer, Serialize};
+pub mod types;
+
+use crate::utils::deserialize_null_default;
+
+use super::{CrunchIO, QueryParams};
+use serde::{Deserialize, Serialize};
+// use uuid::Uuid;
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct CpuInfo {
@@ -76,19 +82,6 @@ pub struct RunningInstance {
     jupyter_token: String,
 }
 
-fn deserialize_null_default<'de, D, T>(deserializer: D) -> Result<T, D::Error>
-where
-    T: Default + Deserialize<'de>,
-    D: Deserializer<'de>,
-{
-    let opt = Option::deserialize(deserializer)?;
-    Ok(opt.unwrap_or_default())
-}
-
-pub type RunningInstances = Vec<RunningInstance>;
-
-pub type Instances = Vec<Instance>;
-
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct InstancesAvailabilitie {
     location_code: String,
@@ -97,11 +90,49 @@ pub struct InstancesAvailabilitie {
 
 pub type InstancesAvailabilities = Vec<InstancesAvailabilitie>;
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub enum ActionType {
-    Start,
-    Shutdown,
-    Restore,
-    Delete,
-    Hibernate,
+pub type RunningInstances = Vec<RunningInstance>;
+
+pub type Instances = Vec<Instance>;
+
+const PATH: &str = "instances";
+
+impl CrunchIO {
+    pub fn get_instances(&self) -> RunningInstances {
+        match self
+            .query(&QueryParams {
+                path: PATH,
+                ..Default::default()
+            })
+            .into_json()
+        {
+            Ok(instances) => instances,
+            Err(error) => panic!("Json parsing failed with: {error}"),
+        }
+    }
+
+    pub fn get_instance_by_id(&self, id: &str) -> RunningInstance {
+        match self
+            .query(&QueryParams {
+                path: &format!("{}/{}", PATH, id),
+                ..Default::default()
+            })
+            .into_json()
+        {
+            Ok(locations) => locations,
+            Err(error) => panic!("Json parsing failed with: {error}"),
+        }
+    }
+
+    pub fn get_instance_availabilities(&self) -> InstancesAvailabilities {
+        match self
+            .query(&QueryParams {
+                path: PATH,
+                ..Default::default()
+            })
+            .into_json()
+        {
+            Ok(instance_availabilities) => instance_availabilities,
+            Err(error) => panic!("Json parsing failed with: {error}"),
+        }
+    }
 }

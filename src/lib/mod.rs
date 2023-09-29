@@ -1,17 +1,12 @@
-pub mod constants;
-use constants::{api, routes};
-
+pub mod balance;
 pub mod error;
-
-pub mod ionos;
-
-pub mod scripts;
-
-pub mod schemas;
-use schemas::instance::RunningInstance;
-
-pub mod credentials;
-use credentials::Credentials;
+pub mod images;
+pub mod instances;
+pub mod locations;
+pub mod ssh_keys;
+pub mod startup_scripts;
+pub mod utils;
+pub mod volumes;
 
 pub mod session;
 use session::Session;
@@ -21,6 +16,25 @@ use serde_json::Value;
 use std::time::Duration;
 use ureq::{json, AgentBuilder, Error, Response};
 use url::Url;
+
+pub mod api {
+    pub const URL: &str = "https://api.datacrunch.io/v1";
+    pub const VERSION: &str = "v1";
+    pub const AUTHENTICATION: &str = "https://api.datacrunch.io/v1/oauth2/token";
+}
+
+pub mod routes {
+    pub const IMAGES: &str = "images";
+    pub const BALANCE: &str = "balance";
+    pub const LOCATIONS: &str = "locations";
+    pub const INSTANCES: &str = "instances";
+    pub const INSTANCE_TYPES: &str = "instance-types";
+    pub const INSTANCE_AVAILABILITY: &str = "instance-availability";
+    pub const AUTHENTICATION: &str = "token";
+    pub const SSH_KEYS: &str = "sshkeys";
+    pub const SCRIPTS: &str = "scripts";
+    pub const VOLUMES: &str = "volumes";
+}
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub enum Method {
@@ -44,27 +58,23 @@ impl From<&Method> for &str {
 
 pub struct CrunchIO {
     pub client: ureq::Agent,
-    pub credentials: Credentials,
     pub session: Session,
     pub base_url: Url,
 }
 
 impl Default for CrunchIO {
     fn default() -> Self {
-        let credentials = Credentials::default();
-
         let client = AgentBuilder::new()
             .timeout_read(Duration::from_secs(5))
             .timeout_write(Duration::from_secs(5))
             .build();
 
-        let session = Session::set_tokens(&client, &credentials);
+        let session = Session::set_tokens(&client);
 
         let base_url = Url::parse(api::URL).unwrap();
 
         Self {
             client,
-            credentials,
             session,
             base_url,
         }
@@ -116,208 +126,76 @@ impl CrunchIO {
             }
         }
     }
-
-    pub fn get_all_instance_types(&self) -> schemas::Instances {
-        match self
-            .query(&QueryParams {
-                path: routes::INSTANCE_TYPES,
-                ..Default::default()
-            })
-            .into_json()
-        {
-            Ok(instances) => instances,
-            Err(error) => panic!("Json parsing failed with: {error}"),
-        }
-    }
-
-    pub fn get_instances(&self) -> schemas::RunningInstances {
-        match self
-            .query(&QueryParams {
-                path: routes::INSTANCES,
-                ..Default::default()
-            })
-            .into_json()
-        {
-            Ok(instances) => instances,
-            Err(error) => panic!("Json parsing failed with: {error}"),
-        }
-    }
-
-    pub fn shutdown(&self, id: &str) -> String {
-        let response = self
-            .client
-            .put(routes::INSTANCES)
-            .set("Content-Type", "application/json")
-            .set("Authorization", &self.session.bearer())
-            .send_json(ureq::json!({
-              "id": id,
-              "action": "shutdown"
-            }))
-            .expect("cannot post the req");
-        response.into_string().unwrap()
-    }
-
-    pub fn start(&self, id: &str) -> String {
-        let response = self
-            .client
-            .put(routes::INSTANCES)
-            .set("Content-Type", "application/json")
-            .set("Authorization", &self.session.bearer())
-            .send_json(ureq::json!({
-              "id": id,
-              "action": "start"
-            }))
-            .expect("cannot post the req");
-        response.into_string().unwrap()
-    }
-
-    pub fn hibernate(&self, id: &str) -> String {
-        self.shutdown(id);
-
-        let response = self
-            .client
-            .put(routes::INSTANCES)
-            .set("Content-Type", "application/json")
-            .set("Authorization", &self.session.bearer())
-            .send_json(ureq::json!({
-              "id": id,
-              "action": "hibernate"
-            }))
-            .expect("cannot post the req");
-        response.into_string().unwrap()
-    }
-
-    pub fn deploy_new_instance(&self) -> String {
-        let ssh_key_ids = "f42ab232-eb48-485f-b188-d528ebbf1beb";
-        let hostname = "cuda";
-        let description = "Rust cuda gpu server";
-        let location_code = "FIN-01";
-        let image = "9eb0f166-f119-49c9-ba55-e857dd055500";
-        let instance_type = "1V100.6V";
-        let is_spot = true;
-
-        let response = self
-            .client
-            .post(routes::INSTANCES)
-            .set("Content-Type", "application/json")
-            .set("'Accept", "application/json")
-            .set("Authorization", &self.session.bearer())
-            .send_json(ureq::json!({
-              "instance_type": instance_type,
-              "image": image,
-              "ssh_key_ids": ssh_key_ids,
-              "hostname": hostname,
-              "description": description,
-              "location_code": location_code,
-              "is_spot": is_spot
-            }))
-            .expect("cannot post the req");
-        response.into_string().unwrap()
-    }
-
-    pub fn get_instance_by_id(&self, id: &str) -> RunningInstance {
-        match self
-            .query(&QueryParams {
-                path: &format!("{}/{}", routes::INSTANCES, id),
-                ..Default::default()
-            })
-            .into_json()
-        {
-            Ok(locations) => locations,
-            Err(error) => panic!("Json parsing failed with: {error}"),
-        }
-    }
-
-    pub fn get_ssh_keys(&self) -> schemas::SshKeys {
-        match self
-            .query(&QueryParams {
-                path: routes::SSH_KEYS,
-                ..Default::default()
-            })
-            .into_json()
-        {
-            Ok(ssh_keys) => ssh_keys,
-            Err(error) => panic!("Json parsing failed with: {error}"),
-        }
-    }
-
-    pub fn get_instance_availabilities(&self) -> schemas::InstancesAvailabilities {
-        match self
-            .query(&QueryParams {
-                path: routes::INSTANCE_AVAILABILITY,
-                ..Default::default()
-            })
-            .into_json()
-        {
-            Ok(instance_availabilities) => instance_availabilities,
-            Err(error) => panic!("Json parsing failed with: {error}"),
-        }
-    }
-
-    pub fn get_images(&self) -> schemas::Images {
-        match self
-            .query(&QueryParams {
-                path: routes::IMAGES,
-                ..Default::default()
-            })
-            .into_json()
-        {
-            Ok(images) => images,
-            Err(error) => panic!("Json parsing failed with: {error}"),
-        }
-    }
-
-    pub fn get_volumes(&self) -> schemas::Volumes {
-        match self
-            .query(&QueryParams {
-                path: routes::VOLUMES,
-                ..Default::default()
-            })
-            .into_json()
-        {
-            Ok(volumes) => volumes,
-            Err(error) => panic!("Json parsing failed with: {error}"),
-        }
-    }
-
-    pub fn get_locations(&self) -> schemas::Locations {
-        match self
-            .query(&QueryParams {
-                path: routes::LOCATIONS,
-                ..Default::default()
-            })
-            .into_json()
-        {
-            Ok(locations) => locations,
-            Err(error) => panic!("Json parsing failed with: {error}"),
-        }
-    }
-
-    pub fn get_balance(&self) -> schemas::Balance {
-        match self
-            .query(&QueryParams {
-                path: routes::BALANCE,
-                ..Default::default()
-            })
-            .into_json()
-        {
-            Ok(balance) => balance,
-            Err(error) => panic!("Json parsing failed with: {error}"),
-        }
-    }
 }
 
-// pub fn add(left: usize, right: usize) -> usize {
-//   left + right
+// pub fn shutdown(&self, id: &str) -> String {
+//     let response = self
+//         .client
+//         .put(routes::INSTANCES)
+//         .set("Content-Type", "application/json")
+//         .set("Authorization", &self.session.bearer())
+//         .send_json(ureq::json!({
+//           "id": id,
+//           "action": "shutdown"
+//         }))
+//         .expect("cannot post the req");
+//     response.into_string().unwrap()
 // }
 
-// #[cfg(test)]
-// mod tests {
-//   use super::*;
+// pub fn start(&self, id: &str) -> String {
+//     let response = self
+//         .client
+//         .put(routes::INSTANCES)
+//         .set("Content-Type", "application/json")
+//         .set("Authorization", &self.session.bearer())
+//         .send_json(ureq::json!({
+//           "id": id,
+//           "action": "start"
+//         }))
+//         .expect("cannot post the req");
+//     response.into_string().unwrap()
+// }
 
-//   #[test]
-//   fn it_works() {
-//       let result = add(2, 2);
-//       assert_eq!(result, 4);
-//   }
+// pub fn hibernate(&self, id: &str) -> String {
+//     self.shutdown(id);
+
+//     let response = self
+//         .client
+//         .put(routes::INSTANCES)
+//         .set("Content-Type", "application/json")
+//         .set("Authorization", &self.session.bearer())
+//         .send_json(ureq::json!({
+//           "id": id,
+//           "action": "hibernate"
+//         }))
+//         .expect("cannot post the req");
+//     response.into_string().unwrap()
+// }
+
+// pub fn deploy_new_instance(&self) -> String {
+//     let ssh_key_ids = "f42ab232-eb48-485f-b188-d528ebbf1beb";
+//     let hostname = "cuda";
+//     let description = "Rust cuda gpu server";
+//     let location_code = "FIN-01";
+//     let image = "9eb0f166-f119-49c9-ba55-e857dd055500";
+//     let instance_type = "1V100.6V";
+//     let is_spot = true;
+
+//     let response = self
+//         .client
+//         .post(routes::INSTANCES)
+//         .set("Content-Type", "application/json")
+//         .set("'Accept", "application/json")
+//         .set("Authorization", &self.session.bearer())
+//         .send_json(ureq::json!({
+//           "instance_type": instance_type,
+//           "image": image,
+//           "ssh_key_ids": ssh_key_ids,
+//           "hostname": hostname,
+//           "description": description,
+//           "location_code": location_code,
+//           "is_spot": is_spot
+//         }))
+//         .expect("cannot post the req");
+//     response.into_string().unwrap()
 // }

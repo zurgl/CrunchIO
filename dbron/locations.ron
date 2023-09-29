@@ -1,0 +1,12 @@
+[
+    Location {
+        code: "FIN-01",
+        name: "Finland 1",
+        country_code: "FI",
+    },
+    Location {
+        code: "ICE-01",
+        name: "Iceland 1",
+        country_code: "IS",
+    },
+]
