@@ -13,4 +13,4 @@ uuid = { version = "1.4.1", features = ["serde", "v4"] }
 
 [lib]
 name = "crunchio"
-path = "src/lib/mod.rs"
+path = "src/lib.rs"
