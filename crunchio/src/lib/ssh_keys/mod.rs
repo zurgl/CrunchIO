@@ -1,4 +1,4 @@
-use super::{CrunchIO, Method, QueryParams};
+use super::{CrunchIO, Error, Method, QueryParams, Result};
 use serde::{Deserialize, Serialize};
 use ureq::json;
 use uuid::Uuid;
@@ -21,84 +21,70 @@ use super::routes::SSH_KEYS as path;
 
 impl CrunchIO {
   // Private require Bearer token
-  pub fn get_all_ssh_keys(&self) -> SshKeys {
-    match self
-      .query(&QueryParams {
+  pub fn get_all_ssh_keys(&self) -> Result<SshKeys> {
+    self
+      .http_request(&QueryParams {
         path,
         ..Default::default()
-      })
+      })?
       .into_json()
-    {
-      Ok(data) => data,
-      Err(error) => panic!("Json parsing failed with: {error}"),
-    }
+      .map_err(Error::JsonParsing)
   }
 
   // Private require Bearer token
-  pub fn add_ssh_keys(&self, name: &str, key: &str) -> Uuid {
+  pub fn add_ssh_keys(&self, name: &str, key: &str) -> Result<Uuid> {
     let payload = json!({
       "name": name,
       "key": key
     });
-    match self
-      .query(&QueryParams {
+    self
+      .http_request(&QueryParams {
         path,
         method: Method::POST,
         payload,
         ..Default::default()
-      })
+      })?
       .into_string()
-    {
-      Ok(value) => Uuid::try_parse(&value).unwrap(),
-      Err(error) => panic!("Json parsing failed with: {error}"),
-    }
+      .map_err(Error::JsonParsing)
+      .map(|value| Uuid::try_parse(&value).unwrap())
   }
 
   // Private require Bearer token
-  pub fn delete_ssh_keys(&self, keys: &Vec<Uuid>) -> DeletedKeys {
+  pub fn delete_ssh_keys(&self, keys: &Vec<Uuid>) -> Result<DeletedKeys> {
     let payload = json!({
       "keys": keys
     });
-    match self
-      .query(&QueryParams {
+    self
+      .http_request(&QueryParams {
         path,
         method: Method::DELETE,
         payload,
         ..Default::default()
-      })
+      })?
       .into_json()
-    {
-      Ok(count) => count,
-      Err(error) => panic!("Json parsing failed with: {error}"),
-    }
+      .map_err(Error::JsonParsing)
   }
 
   // Private require Bearer token
-  pub fn get_ssh_key_by_id(&self, id: &Uuid) -> SshKeys {
-    match self
-      .query(&QueryParams {
+  pub fn get_ssh_key_by_id(&self, id: &Uuid) -> Result<SshKeys> {
+    self
+      .http_request(&QueryParams {
         path: &format!("{path}/{id}"),
         ..Default::default()
-      })
+      })?
       .into_json()
-    {
-      Ok(scripts) => scripts,
-      Err(error) => panic!("Json parsing failed with: {error}"),
-    }
+      .map_err(Error::JsonParsing)
   }
 
   // Private require Bearer token
-  pub fn delete_ssh_key_by_id(&self, id: &Uuid) -> DeletedKeys {
-    match self
-      .query(&QueryParams {
+  pub fn delete_ssh_key_by_id(&self, id: &Uuid) -> Result<DeletedKeys> {
+    self
+      .http_request(&QueryParams {
         path: &format!("{path}/{id}"),
         method: Method::DELETE,
         ..Default::default()
-      })
+      })?
       .into_json()
-    {
-      Ok(info) => info,
-      Err(error) => panic!("Json parsing failed with: {error}"),
-    }
+      .map_err(Error::JsonParsing)
   }
 }

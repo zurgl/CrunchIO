@@ -68,76 +68,12 @@ pub struct QueryParams<'a> {
   params: Vec<(&'a str, &'a str)>,
 }
 
-impl CrunchIO {
-  fn query(&self, query_params: &QueryParams) -> Response {
-    self.query_(query_params, true)
-  }
-
-  fn public_query(&self, query_params: &QueryParams) -> Response {
-    self.query_(query_params, false)
-  }
-
-  pub fn refresh_session(&mut self) {
-    self.session.refresh(&self.client)
-  }
-
-  fn query_(&self, query_params: &QueryParams, is_private: bool) -> Response {
-    let QueryParams {
-      method,
-      path,
-      payload,
-      params,
-    } = query_params;
-
-    let url = &mut self.base_url.clone();
-    url.set_path(&format!("{api_version}/{path}", api_version = api::VERSION));
-
-    let mut request = self.client.request_url(method.into(), url);
-    request = request.set("Content-Type", "application/json");
-    request = request.set("Accept", "application/json");
-    if is_private {
-      request = request.set("Authorization", &self.session.bearer());
-    }
-
-    for (param, value) in params {
-      request = request.query(param, value);
-    }
-
-    match {
-      if !payload.is_null() {
-        request.send_json(json!(payload))
-      } else {
-        request.call()
-      }
-    } {
-      Ok(response) => response,
-      Err(ureq::Error::Status(code, response)) => {
-        panic!("\n\nexit with:\n\tcode: {code:#?}\n\treponse: {response:#?}\n\n")
-      }
-      Err(error) => {
-        panic!("Unknown error {error:#?}")
-      }
-    }
-  }
-}
-
-impl CrunchIO {
-  fn query2(&self, query_params: &QueryParams) -> Result<Response> {
-    self.http_request(query_params, true)
-  }
-
-  #[allow(dead_code)]
-  fn public_query2(&self, query_params: &QueryParams) -> Result<Response> {
-    self.http_request(query_params, false)
-  }
-}
-
 trait HttpRequest {
-  fn http_request(&self, params: &QueryParams, is_private: bool) -> Result<Response>;
+  fn http_request_(&self, params: &QueryParams, is_private: bool) -> Result<Response>;
 }
 
 impl HttpRequest for CrunchIO {
-  fn http_request(&self, query_params: &QueryParams, is_private: bool) -> Result<Response> {
+  fn http_request_(&self, query_params: &QueryParams, is_private: bool) -> Result<Response> {
     let QueryParams {
       method,
       path,
@@ -166,5 +102,20 @@ impl HttpRequest for CrunchIO {
     };
 
     Ok(result?)
+  }
+}
+
+impl CrunchIO {
+  pub fn refresh_session(&mut self) {
+    self.session.refresh(&self.client)
+  }
+
+  fn http_request(&self, query_params: &QueryParams) -> Result<Response> {
+    self.http_request_(query_params, true)
+  }
+
+  #[allow(dead_code)]
+  fn public_http_request(&self, query_params: &QueryParams) -> Result<Response> {
+    self.http_request_(query_params, false)
   }
 }

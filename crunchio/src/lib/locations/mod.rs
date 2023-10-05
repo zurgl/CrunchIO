@@ -1,4 +1,4 @@
-use super::{CrunchIO, QueryParams};
+use super::{CrunchIO, Error, QueryParams, Result};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq, Eq)]
@@ -31,16 +31,13 @@ pub type Locations = Vec<Location>;
 use super::routes::LOCATIONS as path;
 
 impl CrunchIO {
-  pub fn get_locations(&self) -> Locations {
-    match self
-      .query(&QueryParams {
+  pub fn get_locations(&self) -> Result<Locations> {
+    self
+      .http_request(&QueryParams {
         path,
         ..Default::default()
-      })
+      })?
       .into_json()
-    {
-      Ok(locations) => locations,
-      Err(error) => panic!("Json parsing failed with: {error}"),
-    }
+      .map_err(Error::JsonParsing)
   }
 }

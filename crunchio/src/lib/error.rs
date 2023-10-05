@@ -30,11 +30,13 @@ pub enum Error {
   UnknowTransportFailure(Transport),
   #[error("Unkwon transport error")]
   JsonParsing(#[source] std::io::Error),
+  #[error("Uuid parsing error")]
+  UuidParsing(#[source] uuid::Error),
 }
 
 impl From<ureq::Error> for Error {
-  fn from(err: ureq::Error) -> Self {
-    match err {
+  fn from(error: ureq::Error) -> Self {
+    match error {
       ureq::Error::Transport(info) => Error::UnknowTransportFailure(info),
       ureq::Error::Status(code, _) => match code {
         400 => Error::InvalidRequest(code),

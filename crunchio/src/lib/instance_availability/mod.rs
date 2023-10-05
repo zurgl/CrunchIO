@@ -1,4 +1,4 @@
-use super::{locations::LocationCode, CrunchIO, QueryParams};
+use super::{locations::LocationCode, CrunchIO, Error, QueryParams, Result};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -16,34 +16,28 @@ impl CrunchIO {
     &self,
     is_spot: bool,
     location: &LocationCode,
-  ) -> InstancesAvailabilities {
+  ) -> Result<InstancesAvailabilities> {
     let params = vec![
       ("isSpot", if is_spot { "true" } else { "false" }),
       ("locationCode", location.into()),
     ];
-    match self
-      .query(&QueryParams {
+    self
+      .http_request(&QueryParams {
         path,
         params,
         ..Default::default()
-      })
+      })?
       .into_json()
-    {
-      Ok(instance_availabilities) => instance_availabilities,
-      Err(error) => panic!("Json parsing failed with: {error}"),
-    }
+      .map_err(Error::JsonParsing)
   }
 
-  pub fn get_instance_availability_by_type(&self, instance_type: &str) -> bool {
-    match self
-      .query(&QueryParams {
+  pub fn get_instance_availability_by_type(&self, instance_type: &str) -> Result<bool> {
+    self
+      .http_request(&QueryParams {
         path: &format!("{path}/{instance_type}"),
         ..Default::default()
-      })
+      })?
       .into_json()
-    {
-      Ok(instance_availabilities) => instance_availabilities,
-      Err(error) => panic!("Json parsing failed with: {error}"),
-    }
+      .map_err(Error::JsonParsing)
   }
 }

@@ -1,4 +1,4 @@
-use super::{CrunchIO, Method, QueryParams};
+use super::{CrunchIO, Error, Method, QueryParams, Result};
 use serde::{Deserialize, Serialize};
 use ureq::json;
 use uuid::Uuid;
@@ -21,84 +21,70 @@ use super::routes::SCRIPTS as path;
 
 impl CrunchIO {
   // Private require Bearer token
-  pub fn get_all_startup_scripts(&self) -> Scripts {
-    match self
-      .query(&QueryParams {
+  pub fn get_all_startup_scripts(&self) -> Result<Scripts> {
+    self
+      .http_request(&QueryParams {
         path,
         ..Default::default()
-      })
+      })?
       .into_json()
-    {
-      Ok(scripts) => scripts,
-      Err(error) => panic!("Json parsing failed with: {error}"),
-    }
+      .map_err(Error::JsonParsing)
   }
 
   // Private require Bearer token
-  pub fn add_startup_script(&self, name: &str, script: &str) -> Uuid {
+  pub fn add_startup_script(&self, name: &str, script: &str) -> Result<Uuid> {
     let payload = json!({
       "name": name,
       "script": script
     });
-    match self
-      .query(&QueryParams {
+    self
+      .http_request(&QueryParams {
         path,
         method: Method::POST,
         payload,
         ..Default::default()
-      })
+      })?
       .into_string()
-    {
-      Ok(value) => Uuid::try_parse(&value).unwrap(),
-      Err(error) => panic!("Json parsing failed with: {error}"),
-    }
+      .map_err(Error::JsonParsing)
+      .and_then(|value| Uuid::try_parse(&value).map_err(Error::UuidParsing))
   }
 
   // Private require Bearer token
-  pub fn delete_startup_scripts(&self, scripts: &Vec<Uuid>) -> DeletedScripts {
+  pub fn delete_startup_scripts(&self, scripts: &Vec<Uuid>) -> Result<DeletedScripts> {
     let payload = json!({
       "scripts": scripts
     });
-    match self
-      .query(&QueryParams {
+    self
+      .http_request(&QueryParams {
         path,
         method: Method::DELETE,
         payload,
         ..Default::default()
-      })
+      })?
       .into_json()
-    {
-      Ok(count) => count,
-      Err(error) => panic!("Json parsing failed with: {error}"),
-    }
+      .map_err(Error::JsonParsing)
   }
 
   // Private require Bearer token
-  pub fn get_startup_script_by_id(&self, id: &Uuid) -> Scripts {
-    match self
-      .query(&QueryParams {
+  pub fn get_startup_script_by_id(&self, id: &Uuid) -> Result<Scripts> {
+    self
+      .http_request(&QueryParams {
         path: &format!("{path}/{id}"),
         ..Default::default()
-      })
+      })?
       .into_json()
-    {
-      Ok(scripts) => scripts,
-      Err(error) => panic!("Json parsing failed with: {error}"),
-    }
+      .map_err(Error::JsonParsing)
   }
 
   // Private require Bearer token
-  pub fn delete_startup_script_by_id(&self, id: &Uuid) -> DeletedScripts {
-    match self
-      .query(&QueryParams {
+  pub fn delete_startup_script_by_id(&self, id: &Uuid) -> Result<DeletedScripts> {
+    self
+      .http_request(&QueryParams {
         path: &format!("{path}/{id}"),
         method: Method::DELETE,
         ..Default::default()
-      })
+      })?
       .into_json()
-    {
-      Ok(info) => info,
-      Err(error) => panic!("Json parsing failed with: {error}"),
-    }
+      .map_err(Error::JsonParsing)
   }
 }

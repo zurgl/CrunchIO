@@ -1,6 +1,6 @@
 use crate::_shared_::deserialize_null_default;
 
-use super::{CpuInfo, CrunchIO, GpuInfo, Memory, QueryParams};
+use super::{CpuInfo, CrunchIO, Error, GpuInfo, Memory, QueryParams, Result};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -34,16 +34,13 @@ use super::routes::INSTANCE_TYPES as path;
 pub type InstanceTypes = Vec<InstanceType>;
 
 impl CrunchIO {
-  pub fn get_all_instance_types(&self) -> InstanceTypes {
-    match self
-      .public_query(&QueryParams {
+  pub fn get_all_instance_types(&self) -> Result<InstanceTypes> {
+    self
+      .public_http_request(&QueryParams {
         path,
         ..Default::default()
-      })
+      })?
       .into_json()
-    {
-      Ok(instances) => instances,
-      Err(error) => panic!("Json parsing failed with: {error}"),
-    }
+      .map_err(Error::JsonParsing)
   }
 }

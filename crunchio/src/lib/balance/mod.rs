@@ -18,7 +18,7 @@ use super::routes::BALANCE as path;
 impl CrunchIO {
   pub fn get_user_balance(&self) -> Result<UserBalance> {
     self
-      .query2(&QueryParams {
+      .http_request(&QueryParams {
         path,
         ..Default::default()
       })?

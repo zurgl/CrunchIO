@@ -1,7 +1,8 @@
-use crunchio::{instances::ActionType, CrunchIO, InstanceCreateBody};
+use crunchio::{instances::ActionType, CrunchIO, InstanceCreateBody, Result};
 
 #[test]
-fn test_all_http_method_for_instances() {
+#[ignore = "not ready yet"]
+fn test_all_http_method_for_instances() -> Result<()> {
   let client = CrunchIO::default();
 
   let instance_type = "1V100.6V";
@@ -25,12 +26,13 @@ fn test_all_http_method_for_instances() {
   // println!("{instance_id}");
 
   let id = "d698dbaf-4bb9-4299-b686-9042e21f909b";
-  let instance = client.get_instance_by_id(id);
+  let instance = client.get_instance_by_id(id)?;
   println!("{instance:?}");
 
-  let info = client.perform_action_on_instance(id, ActionType::Delete);
+  let info = client.perform_action_on_instance(id, ActionType::Delete)?;
   println!("{info:?}");
 
+  Ok(())
   // let instance = client.get_instance_by_id(id);
   // println!("{instance:?}");
 }

@@ -5,7 +5,7 @@ use crate::{
   volumes::Volume,
 };
 
-use super::{CrunchIO, QueryParams};
+use super::{CrunchIO, Error, QueryParams, Result};
 use serde::{Deserialize, Serialize};
 use ureq::json;
 use uuid::Uuid;
@@ -98,65 +98,53 @@ pub struct InstanceCreateBody<'a> {
 use super::routes::INSTANCES as path;
 
 impl CrunchIO {
-  pub fn get_instances(&self) -> RunningInstances {
-    match self
-      .query(&QueryParams {
+  pub fn get_instances(&self) -> Result<RunningInstances> {
+    self
+      .http_request(&QueryParams {
         path,
         ..Default::default()
-      })
+      })?
       .into_json()
-    {
-      Ok(instances) => instances,
-      Err(error) => panic!("Json parsing failed with: {error}"),
-    }
+      .map_err(Error::JsonParsing)
   }
 
-  pub fn get_instance_by_id(&self, id: &str) -> RunningInstance {
-    match self
-      .query(&QueryParams {
+  pub fn get_instance_by_id(&self, id: &str) -> Result<RunningInstance> {
+    self
+      .http_request(&QueryParams {
         path: &format!("{path}/{id}"),
         ..Default::default()
-      })
+      })?
       .into_json()
-    {
-      Ok(locations) => locations,
-      Err(error) => panic!("Json parsing failed with: {error}"),
-    }
+      .map_err(Error::JsonParsing)
   }
 
-  pub fn create_new_instance(&self, body: &InstanceCreateBody) -> String {
+  pub fn create_new_instance(&self, body: &InstanceCreateBody) -> Result<String> {
     let payload = json!(body);
 
-    match self
-      .query(&QueryParams {
+    self
+      .http_request(&QueryParams {
         path,
         method: Method::POST,
         payload,
         ..Default::default()
-      })
+      })?
       .into_string()
-    {
-      Ok(info) => info,
-      Err(error) => panic!("Json parsing failed with: {error}"),
-    }
+      .map_err(Error::JsonParsing)
   }
 
-  pub fn perform_action_on_instance(&self, id: &str, action: ActionType) -> String {
+  pub fn perform_action_on_instance(&self, id: &str, action: ActionType) -> Result<String> {
     let payload = json!({
       "id": id,
       "action": action
     });
-    match self
-      .query(&QueryParams {
+    self
+      .http_request(&QueryParams {
         path,
         method: Method::PUT,
         payload,
         ..Default::default()
-      })
+      })?
       .into_string()
-    {
-      Ok(info) => info,
-      Err(error) => panic!("Json parsing failed with: {error}"),
-    }
+      .map_err(Error::JsonParsing)
   }
 }

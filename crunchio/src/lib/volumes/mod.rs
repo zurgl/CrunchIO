@@ -3,7 +3,8 @@ use serde_json::json;
 use uuid::Uuid;
 
 use crate::{
-  locations::LocationCode, CrunchIO, Method, QueryParams, _shared_::deserialize_null_default,
+  locations::LocationCode, CrunchIO, Error, Method, QueryParams, Result,
+  _shared_::deserialize_null_default,
 };
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
@@ -83,33 +84,27 @@ pub struct VolumeCreateBody<'a> {
 use super::routes::VOLUMES as path;
 
 impl CrunchIO {
-  pub fn get_all_volumes(&self) -> Volumes {
-    match self
-      .query(&QueryParams {
+  pub fn get_all_volumes(&self) -> Result<Volumes> {
+    self
+      .http_request(&QueryParams {
         path,
         ..Default::default()
-      })
+      })?
       .into_json()
-    {
-      Ok(volumes) => volumes,
-      Err(error) => panic!("Json parsing failed with: {error}"),
-    }
+      .map_err(Error::JsonParsing)
   }
 
-  pub fn perform_action_on_volume(&self) -> Volumes {
-    match self
-      .query(&QueryParams {
+  pub fn perform_action_on_volume(&self) -> Result<Volumes> {
+    self
+      .http_request(&QueryParams {
         path,
         ..Default::default()
-      })
+      })?
       .into_json()
-    {
-      Ok(volumes) => volumes,
-      Err(error) => panic!("Json parsing failed with: {error}"),
-    }
+      .map_err(Error::JsonParsing)
   }
 
-  pub fn create_new_volume(&self, name: &str, size: u64) -> String {
+  pub fn create_new_volume(&self, name: &str, size: u64) -> Result<String> {
     assert!(name.len() <= 60);
     assert!(size >= 40);
     let payload = json!(VolumeCreateBody {
@@ -118,44 +113,35 @@ impl CrunchIO {
       ..Default::default()
     });
 
-    match self
-      .query(&QueryParams {
+    self
+      .http_request(&QueryParams {
         path,
         payload,
         method: Method::POST,
         ..Default::default()
-      })
+      })?
       .into_string()
-    {
-      Ok(volume_id) => volume_id,
-      Err(error) => panic!("Json parsing failed with: {error}"),
-    }
+      .map_err(Error::JsonParsing)
   }
 
-  pub fn delete_volume_by_id(&self, id: &str) -> String {
-    match self
-      .query(&QueryParams {
+  pub fn delete_volume_by_id(&self, id: &str) -> Result<String> {
+    self
+      .http_request(&QueryParams {
         path: &format!("{path}/{id}"),
         method: Method::DELETE,
         ..Default::default()
-      })
+      })?
       .into_string()
-    {
-      Ok(info) => info,
-      Err(error) => panic!("Json parsing failed with: {error}"),
-    }
+      .map_err(Error::JsonParsing)
   }
 
-  pub fn get_volume_by_id(&self, id: &str) -> String {
-    match self
-      .query(&QueryParams {
+  pub fn get_volume_by_id(&self, id: &str) -> Result<String> {
+    self
+      .http_request(&QueryParams {
         path: &format!("{path}/{id}"),
         ..Default::default()
-      })
+      })?
       .into_string()
-    {
-      Ok(info) => info,
-      Err(error) => panic!("Json parsing failed with: {error}"),
-    }
+      .map_err(Error::JsonParsing)
   }
 }

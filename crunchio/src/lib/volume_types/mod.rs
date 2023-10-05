@@ -1,6 +1,5 @@
+use super::{CrunchIO, Error, QueryParams, Result};
 use crate::{balance::Currency, volumes::VolumeType};
-
-use super::{CrunchIO, QueryParams};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -23,16 +22,13 @@ pub type VolumeTypeInfos = Vec<VolumeTypeInfo>;
 use super::routes::VOLUME_TYPES as path;
 
 impl CrunchIO {
-  pub fn get_volumes_types(&self) -> VolumeTypeInfos {
-    match self
-      .query(&QueryParams {
+  pub fn get_volumes_types(&self) -> Result<VolumeTypeInfos> {
+    self
+      .http_request(&QueryParams {
         path,
         ..Default::default()
-      })
+      })?
       .into_json()
-    {
-      Ok(volumes) => volumes,
-      Err(error) => panic!("Json parsing failed with: {error}"),
-    }
+      .map_err(Error::JsonParsing)
   }
 }
