@@ -16,7 +16,12 @@
     },
     "files.exclude": {
       "target": true,
+      // ".cargo": true,
+      ".gitattributes": true,
       "Cargo.lock": true,
+      "routers": true,
+      "dionos": true,
+
     },
     "rust-analyzer.showUnlinkedFileNotification": false
   }

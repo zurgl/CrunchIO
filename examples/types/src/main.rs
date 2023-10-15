@@ -1,4 +1,4 @@
-use crunchio::CrunchIO;
+// use crunchio::CrunchIO;
 
 /*
  - A100
@@ -9,11 +9,12 @@ use crunchio::CrunchIO;
 */
 
 fn main() {
-  let client = CrunchIO::default();
-  let instance_types = client.get_all_instance_types();
-  let types = instance_types
-    .iter()
-    .map(|instance| instance.instance_type.clone())
-    .collect::<Vec<String>>();
-  println!("{types:#?}");
+  // let client = CrunchIO::default();
+  // let instance_types = client.get_all_instance_types();
+  // let types = instance_types
+  //   .iter()
+  //   .map(|instance| instance.instance_type.clone())
+  //   .collect::<Vec<String>>();
+  // println!("{types:#?}");
+  println!("hello");
 }

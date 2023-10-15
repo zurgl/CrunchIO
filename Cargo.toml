@@ -1,4 +1,4 @@
 [workspace]
-members = ["crunchio", "examples/*", "dionos"]
+members = ["crunchio", "examples/*", "dionos", "routers"]
 default-members = ["crunchio"]
 resolver = "2"
